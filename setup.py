@@ -688,16 +688,17 @@ def find_vcvars():
 
 
 def find_tool(name):
-    """A tool on PATH, or the one pip installed next to this Python (cmake, ninja)."""
+    """The one pip installed next to this Python (cmake, ninja), else a tool on PATH.  The pip one comes first: a
+    distribution's older cmake on PATH (Debian 12's 3.25) knows no C++20 flags for nvcc 13 ("CUDA20")."""
+    exe = name + (".exe" if WIN else "")
+    for d in (Path(sys.executable).parent / "Scripts", Path(sys.executable).parent):
+        if (d / exe).exists():
+            return str(d / exe)
     p = shutil.which(name)
     if p:
         return p
-    for d in (Path(sys.executable).parent / "Scripts", Path(sys.executable).parent,
-              Path.home() / ".local" / "bin"):
-        c = d / (name + (".exe" if WIN else ""))
-        if c.exists():
-            return str(c)
-    return None
+    c = Path.home() / ".local" / "bin" / exe
+    return str(c) if c.exists() else None
 
 
 def free_gb(path):
